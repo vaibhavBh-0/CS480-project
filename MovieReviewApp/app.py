@@ -54,21 +54,21 @@ def login_view():
         return render_template('login_view.html')
     
 
-    @app.route("/")
-    def movie_list_view():
-        # TODO: Saran
-        # 1. List the content of all movies. 
-        # 2. Navigate to Screen 1 when not logged in, 
-        # Screen 3 when selecting a movie, Screen 4 when logged in and user_role is "admin" 
-        return render_template("movie_list_view.html")
+@app.route("/")
+def movie_list_view():
+    # TODO: Saran
+    # 1. List the content of all movies. 
+    # 2. Navigate to Screen 1 when not logged in, 
+    # Screen 3 when selecting a movie, Screen 4 when logged in and user_role is "admin" 
+    return render_template("movie_list_view.html")
     
-    @app.route("/")
-    def movie_review_details_view():
-        # TODO: Vaibhav
-        # 1. List Movie details. 
-        # 2. List Comments. 
-        # 3. If logged in users can view, add or edit their comment. 
-        # 4. Navigate back to movie_list_view.
-        return render_template("movie_review_details_view")
+@app.route("/")
+def movie_review_details_view():
+    # TODO: Vaibhav
+    # 1. List Movie details. 
+    # 2. List Comments. 
+    # 3. If logged in users can view, add or edit their comment. 
+    # 4. Navigate back to movie_list_view.
+    return render_template("movie_review_details_view.html")
 
 
