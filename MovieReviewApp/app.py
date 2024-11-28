@@ -1,74 +1,154 @@
-import os
-import time
-from flask import Flask, render_template, request, redirect, url_for, flash
-
-from dotenv import load_dotenv
-from flask_caching import Cache
-
-
-if not load_dotenv('.flashenv'):
-    print("Environment var not found")
+from flask import Flask, render_template, url_for, request, redirect
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import CheckConstraint
+from datetime import datetime
 
 app = Flask(__name__)
-# Set environment variables and secrets.
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
-app.config["CACHE_TYPE"] = os.getenv("CACHE_TYPE")
-app.config["CACHE_REDIS_HOST"] = os.getenv("CACHE_REDIS_HOST")
-val = os.getenv("CACHE_REDIS_PORT")
-print(f'val: {val} and type: {type(val)}')
-app.config["CACHE_REDIS_PORT"] = int(os.getenv("CACHE_REDIS_PORT"))
-app.config["CACHE_DEFAULT_TIMEOUT"] = int(os.getenv("CACHE_DEFAULT_TIMEOUT"))
-app.config["CACHE_REDIS_DB"] = int(os.getenv("CACHE_REDIS_DB"))
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
+db = SQLAlchemy(app)
 
-cache = Cache(app)
 
-@app.route("/login", methods=["GET", "POST"])
-def login_view():
-    # TODO:
-    # 1. Connect to user table to verify correct username and/or password. - Shomee, Peyman
-    # 2. Pass the user_info to previous screen. - Vaibhav
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-         # TODO: (1.) We assume it's verfied for now.
-        verified = True
-       
-        if verified:
-            user_info = {
-                "user_id" : "1234",
-                "user_role": "general_user"
-            }
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(50), nullable=False, unique=True)
+    password = db.Column(db.String(50), nullable=False)
+    __table_args__ = (
+        db.CheckConstraint("LENGTH(password) >= 8", name='check_password_length'),
+    )
+    role = db.Column(db.String(50), nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.now())
 
-            # Other examples
-            # user_info = {
-            #     "user_id" : "1234",
-            #     "user_role": "admin"
-            # }
-
-            # TODO: (2.) Route to previous screen - wherever the login view was called.
-            return render_template('login_successful.html', user_info=user_info)
-        else:
-            flash('User login not successful! Username or Password is invalid.', 'failed.') 
-            return render_template('login_view.html')
-    elif request.method == "GET":
-        return render_template('login_view.html')
+    def __repr__(self):
+        return f"User id: {self.id}"
     
 
-@app.route("/")
-def movie_list_view():
-    # TODO: Saran
-    # 1. List the content of all movies. 
-    # 2. Navigate to Screen 1 when not logged in, 
-    # Screen 3 when selecting a movie, Screen 4 when logged in and user_role is "admin" 
-    return render_template("movie_list_view.html")
+class Movie(db.Model):
+    __tablename__ = 'movies'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    budget = db.Column(db.Numeric(15, 2))
+    revenue = db.Column(db.Numeric(15, 2))
+    rating = db.Column(db.Numeric(2, 1))
+    # cast_members = db.relationship('Cast', backref='movie', lazy=True)  # This lets each movie to keep track of its casts
+    date_created = db.Column(db.DateTime, default=datetime.now())
+
+    def __repr__(self):
+        return f"Movie id: {self.id}"
+
+
+class Cast(db.Model):
+    __tablename__ = 'casts'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    role = db.Column(db.String(50), nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.now())
+
+    def __repr__(self):
+        return f"Cast id: {self.id}"
     
-@app.route("/")
-def movie_review_details_view():
-    # TODO: Vaibhav
-    # 1. List Movie details. 
-    # 2. List Comments. 
-    # 3. If logged in users can view, add or edit their comment. 
-    # 4. Navigate back to movie_list_view.
-    return render_template("movie_review_details_view.html")
+
+class Participation(db.Model):
+    __tablename__ = 'participations'
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), primary_key=True)
+    cast_id = db.Column(db.Integer, db.ForeignKey('casts.id'), primary_key=True)
 
 
+class Genre(db.Model):
+    __tablename__ = 'genres'
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), primary_key=True)
+    genre = db.Column(db.String(20), primary_key=True)
+
+
+class Review(db.Model):
+    __tablename__ = 'reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Numeric(15, 2))
+    rating = db.Column(db.Integer, nullable=False)
+    __table_args__ = (
+        db.CheckConstraint('rating BETWEEN 1 AND 10', name='check_rating_range'),
+    )
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('casts.id'), primary_key=True)
+    date_created = db.Column(db.DateTime, default=datetime.now())
+
+    def __repr__(self):
+        return f"Movie id: {self.id}"
+
+
+with app.app_context():
+    db.drop_all()
+    db.create_all()
+
+
+@app.route('/', methods=["POST", "GET"])
+def login():
+    if request.method == 'POST':
+        new_user = User(
+            name=request.form['user_name'],
+            email=request.form['user_email'],
+            password=request.form['user_password'],
+            role=request.form['user_role'],
+        )
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            return redirect('/')
+        except:
+            return 'There was an issue adding the new user'
+
+    else:
+        users = User.query.order_by(User.date_created).all()
+        return render_template('index.html', tasks=users)
+    
+
+@app.route('/movies', methods=["POST", "GET"])
+def movie():
+    if request.method == 'POST':
+        new_movie = Movie(
+            name=request.form['movie_name'],
+            budget=float(request.form['movie_budget']),
+            revenue=float(request.form['movie_revenue']),
+            rating=float(request.form['movie_rating']),
+        )
+
+        new_casts = []
+        cast_count = len([key for key in request.form.keys() if key.startswith('cast_name_')])
+        for i in range(1, cast_count + 1):
+            new_cast = Cast(
+                name=request.form.get(f'cast_name_{i}'), 
+                role=request.form.get(f'cast_role_{i}'),
+            )
+            new_casts.append(new_cast)
+
+        db.session.add(new_movie)
+        db.session.add_all(new_casts)
+        db.session.commit()
+
+        new_genre = Genre(
+            movie_id = new_movie.id,
+            genre = request.form['movie_genre']
+        )
+
+        new_participations = []
+        for new_cast in new_casts:
+            participation = Participation(
+                movie_id=new_movie.id, 
+                cast_id=new_cast.id
+            )
+            new_participations.append(participation)
+
+        db.session.add(new_genre)
+        db.session.add_all(new_participations)
+        db.session.commit()
+
+        return redirect('/movies')
+    else:
+        movies = Movie.query.order_by(Movie.date_created).all()
+        return render_template('movies.html', tasks=movies)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>Task Master</title>
+{% endblock %}
+
+{% block body %}
+<div class="content">
+    <h1 style="text-align: center">Task Master</h1>
+    {% if tasks|length < 1 %}
+    <h4 style="text-align: center">There are no tasks. Create one below!</h4>
+    {% else %}
+    <table>
+        <tr>
+            <th>Task</th>
+            <th>Added</th>
+        </tr>
+    </table>
+    {% endif %}
+
+    <div class="form">
+        <form action="/" method="POST">
+            <!-- Text input field -->
+            <label for="name">Full Name:</label><br>
+            <input type="text" id="name" name="user_name" required><br><br>
+
+            <!-- Email input field -->
+            <label for="email">Email:</label><br>
+            <input type="email" id="email" name="user_email" required><br><br>
+            
+            <!-- Passowrd input field -->
+            <label for="password">Password:</label><br>
+            <input type="password" id="password" name="user_password" required><br><br>
+
+            <!-- Radio buttons for gender -->
+            <label>Role:</label><br>
+            <input type="radio" id="male" name="user_role" value="male" required>
+            <label for="male">Admin</label><br>
+            <input type="radio" id="female" name="user_role" value="female">
+            <label for="female">User</label><br>
+
+            <!-- Checkboxes for hobbies -->
+            <!-- <label>Hobbies:</label><br>
+            <input type="checkbox" id="reading" name="hobbies" value="reading">
+            <label for="reading">Reading</label><br>
+            <input type="checkbox" id="travelling" name="hobbies" value="travelling">
+            <label for="travelling">Travelling</label><br>
+            <input type="checkbox" id="sports" name="hobbies" value="sports">
+            <label for="sports">Sports</label><br><br>
+
+            <!-- Dropdown list for country selection -->
+            <!-- <label for="country">Country:</label><br>
+            <select id="country" name="country" required>
+                <option value="usa">United States</option>
+                <option value="canada">Canada</option>
+                <option value="uk">United Kingdom</option>
+                <option value="india">India</option>
+            </select><br><br> -->
+
+            <input type="submit" value="Add User">
+        </form>
+    </div>
+</div>
+{% endblock %}
