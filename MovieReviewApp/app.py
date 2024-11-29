@@ -63,14 +63,14 @@ class Genre(db.Model):
 
 class Review(db.Model):
     __tablename__ = 'reviews'
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Numeric(15, 2))
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    content = db.Column(db.String(50), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     __table_args__ = (
         db.CheckConstraint('rating BETWEEN 1 AND 10', name='check_rating_range'),
     )
-    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('casts.id'), primary_key=True)
+    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('casts.id'))
     date_created = db.Column(db.DateTime, default=datetime.now())
 
     def __repr__(self):
@@ -148,6 +148,30 @@ def movie():
     else:
         movies = Movie.query.order_by(Movie.date_created).all()
         return render_template('movies.html', tasks=movies)
+
+@app.route('/reviews', defaults={'movie_id': None}, methods=["GET", "POST"])
+@app.route('/reviews/<int:movie_id>', methods=["GET", "POST"])
+@app.route('/reviews', methods=["GET", "POST"])
+def reviews():
+    if request.method == "POST":
+       
+        new_review = Review(
+            content=request.form['review_content'], 
+            rating=int(request.form['review_rating']), 
+            movie_id=request.form['movie_id'], 
+            user_id=request.form['user_id'],  
+        )
+        try:
+            db.session.add(new_review)
+            db.session.commit()
+            return redirect('/reviews')  
+        except Exception as e:
+            return f"There was an issue adding the review: {str(e)}"
+
+    
+    reviews = Review.query.order_by(Review.date_created).all()
+    movies = Movie.query.all()  
+    return render_template('reviews.html', tasks=reviews, movies=movies)
 
 
 if __name__ == "__main__":

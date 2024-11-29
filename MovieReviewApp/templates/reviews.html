@@ -6,55 +6,52 @@
 
 {% block body %}
 <div class="content">
-    <h1 style="text-align: center">Task Master</h1>
+    <h1 style="text-align: center">Reviews</h1>
     {% if tasks|length < 1 %}
-    <h4 style="text-align: center">There are no tasks. Create one below!</h4>
+    <h4 style="text-align: center">There are no reviews. Create one below!</h4>
     {% else %}
     <table>
         <tr>
-            <th>Task</th>
-            <th>Added</th>
+            <tr>
+                <th>Movie</th>
+                <th>Content</th>
+                <th>Rating</th>
+                <th>Added</th>
+            </tr>
             <!-- <th>Actions</th> -->
         </tr>
-        <!-- {% for task in tasks %}
+        {% for task in tasks %}
             <tr>
-                <td>{{ task.movie_name }}</td>
+                <td>{{ task.movie_id }}</td>
+                <td>{{ task.content }}</td>
+                <td>{{ task.rating }}</td>
                 <td>{{ task.date_created.date() }}</td>
-                <td>
-                    <a href="/delete/{{task.id}}">Delete</a>
-                    <br>
-                    <a href="/update/{{task.id}}">Update</a>
-                </td>
             </tr>
-        {% endfor %} -->
+        {% endfor %}
     </table>
     {% endif %}
 
     <div class="form">
-        <form action="/movies" method="POST">
-            <!-- Text input field -->
-            <label for="movie_name">Movie Name:</label><br>
-            <input type="text" id="movie_name" name="movie_name" required><br><br>
+        <h2>Add a Review</h2>
+        <form action="/reviews" method="POST">
+            <label for="movie_id">Movie:</label><br>
+            <select id="movie_id" name="movie_id" required>
+                {% for movie in movies %}
+                <option value="{{ movie.id }}">{{ movie.id }}</option>
+                {% endfor %}
+            </select><br><br>
 
-            <label for="budget">Budget:</label><br>
-            <input type="number" id="budget" name="movie_budget" step="0.01" value="0.00" oninput="formatToTwoDecimals()"><br><br>
-            
-            <label for="revenue">Revenue:</label><br>
-            <input type="number" id="revenue" name="movie_revenue" step="0.01" value="0.00" oninput="formatToTwoDecimals()"><br><br>
+            <label for="review_content">Review Content:</label><br>
+            <textarea id="review_content" name="review_content" placeholder="Write your review here..." required></textarea><br><br>
 
-            <label for="rating">Rating:</label><br>
-            <input type="number" id="rating" name="movie_rating" step="0.1" value="0.0" oninput="formatToTwoDecimals()"><br><br>
+            <label for="review_rating">Rating (1-10):</label><br>
+            <input type="number" id="review_rating" name="review_rating" min="1" max="10" required><br><br>
 
-            <!-- Cast Section -->
-            <h3>Cast:</h3>
-            <div id="cast-container">
-                <!-- Cast fields will be added here dynamically -->
-            </div>
-            <button type="button" onclick="addCastForm()">Add Cast</button><br><br>
-
-            <input type="submit" value="Add Movie">
+            <input type="hidden" name="user_id" value="1"> <!-- Replace with actual user ID -->
+            <button type="submit">Submit Review</button>
         </form>
     </div>
+</div>
     
     <script>
 
