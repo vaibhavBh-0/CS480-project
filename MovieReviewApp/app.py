@@ -29,32 +29,64 @@ def login_view():
     # TODO:
     # 1. Connect to user table to verify correct username and/or password. - Shomee, Peyman
     # 2. Pass the user_info to previous screen. - Vaibhav
+    sign_up = False
+
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-         # TODO: (1.) We assume it's verfied for now.
-        verified = True
-       
-        if verified:
+        value = request.form["submission"]
+        if value == 'Login':
+                # TODO: (1.) We assume it's verfied for now.
+            verified = True
+            
+            if verified:
+                user_info = {
+                    "user_id" : "1234",
+                    "user_role": "general_user"
+                }
+
+                # Other examples
+                # user_info = {
+                #     "user_id" : "1234",
+                #     "user_role": "admin"
+                # }
+
+                # TODO: (2.) Route to previous screen - wherever the login view was called.
+                # return redirect(url_for('movie_review_details_view', movie_id="69", user_id=user_info['user_id']))
+                return render_template('login_successful.html', user_info=user_info)
+            else:
+                flash('User login not successful! Username or Password is invalid.', 'failed.') 
+                return render_template('login_view.html', sign_up=sign_up)
+        elif value == 'signup+login':
+            # TODO: Insert user into database and log them in.
+            # return redirect(url_for('movie_review_details_view', movie_id="69", user_id=user_info['user_id']))
             user_info = {
-                "user_id" : "1234",
-                "user_role": "general_user"
+                    "user_id" : "1234",
+                    "user_role": "general_user"
             }
 
-            # Other examples
-            # user_info = {
-            #     "user_id" : "1234",
-            #     "user_role": "admin"
-            # }
+            email_id = request.form["email"]
 
-            # TODO: (2.) Route to previous screen - wherever the login view was called.
-            # return redirect(url_for('movie_review_details_view', movie_id="69", user_id=user_info['user_id']))
-            return render_template('login_successful.html', user_info=user_info)
-        else:
-            flash('User login not successful! Username or Password is invalid.', 'failed.') 
-            return render_template('login_view.html')
+            sign_up = True
+
+            user_name_does_not_exists = True
+
+            if user_name_does_not_exists:
+                return render_template('login_successful.html', user_info=user_info)
+            else:
+                flash('User login not successful! Username or Password is invalid.', 'failed.') 
+                return render_template('login_view.html', sign_up=sign_up)
     elif request.method == "GET":
-        return render_template('login_view.html')
+        print(request.args)
+        print(request.url)
+        # print(dir(request))
+        if 'submission' in request.args:
+            # User is trying to sign up.
+            value = request.args['submission']
+            if value == 'signup':
+                sign_up = True
+
+    return render_template('login_view.html', sign_up=sign_up)
     
 
 @app.route("/")

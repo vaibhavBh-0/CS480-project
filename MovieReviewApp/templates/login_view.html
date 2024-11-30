@@ -57,12 +57,25 @@
     {% endfor %}
     {% endif %}
     {% endwith %}
+    {% if not sign_up %}
     <h2>Login</h2>
     <form method ="POST" action="{{url_for('login_view')}}">
         <input type="text" name="username" id="usn" placeholder="Username" required>
         <input type="password" name="password" id="pwd" placeholder="Password" required>
-        <input type="submit" value="Login">
+        <input type="submit" name="submission" value="Login">
     </form>
+    <form method = "GET" action="{{url_for('login_view')}}">
+        <button type="submit" name="submission" value="signup">Signup</button>
+    </form>
+    {% else %}
+    <h2>Sign up</h2>
+    <form method ="POST" action="{{url_for('login_view')}}">
+        <input type="text" name="username" id="usn" placeholder="Username" required>
+        <input type="text" name="email" id="email" placeholder="Email ID" required>
+        <input type="password" name="password" id="pwd" placeholder="Password" required>
+        <input type="submit" name="submission" value="signup+login">
+    </form>
+    {% endif %}
 </div>
 </body>
 </html>
