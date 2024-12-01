@@ -144,7 +144,10 @@ def movie_list_view(user_id=None):
     paginated_books = movies[range_start: range_end]
     total_pages = (total_rows + per_page - 1) // per_page
     admin = 1 # insert condition
-    # print(user_id)
+    if user_id is not None:
+        print(f'User is logged in {user_id}')
+    else:
+        print("User is not logged in.")
 
     return render_template('movie_list_view.html',
                            total_rows=total_rows,
@@ -257,15 +260,16 @@ def movie_review_details_view(movie_id, user_id=None):
                            movie_comments=movie_comments)
 
 
-@app.route("/movie_detail_view", methods=["GET", "POST"])
-def add_movie_details_view():
+@app.route("/add_movie_details_view/<user_id>", methods=["GET", "POST"])
+def add_movie_details_view(user_id):
     if request.method == "POST":
         # Successful insertion into the database.
         successful = True
+        print(f"User ID is {user_id}")
         if successful:
-            return redirect(url_for('movie_list_view'))
+            return redirect(url_for('movie_list_view', user_id=user_id))
         else:
             flash('Some Error in insertion of data.', 'failed.') 
 
     crew_count = int(request.args.get('crew_count', 1))
-    return render_template("add_movie_details_view.html", crew_count=crew_count)
+    return render_template("add_movie_details_view.html", user_id=user_id, crew_count=crew_count)

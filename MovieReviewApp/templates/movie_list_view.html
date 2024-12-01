@@ -8,7 +8,7 @@ Movie List
 
 
 {% if admin == 1 %}
-<form method="GET" action="{{url_for('add_movie_details_view')}}" class="mb-4 d-flex">
+<form method="GET" action="{{url_for('add_movie_details_view', user_id=user_id)}}" class="mb-4 d-flex">
     <p>Select number of crews to be added to the movie.</p>
     <input type="number" name="crew_count" value=1 min=1>
     <button class="btn btn-outline-success" type="submit">Add Movie Details</button>

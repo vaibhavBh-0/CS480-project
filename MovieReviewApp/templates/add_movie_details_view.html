@@ -59,7 +59,7 @@
     {% endwith %}
     {% if crew_count > 0 %}
     <h2>Add Movie Detail</h2>
-    <form method ="POST" action="{{url_for('add_movie_details_view')}}">
+    <form method ="POST" action="{{url_for('add_movie_details_view', user_id=user_id)}}">
         <input type="text" name="movie_name" id="movie_name" placeholder="Movie Name" required>
         <input type="text" name="budget" id="budget" placeholder="Movie Budget" >
         <input type="text" name="revenue" id="revenue" placeholder="Movie Revenue" >

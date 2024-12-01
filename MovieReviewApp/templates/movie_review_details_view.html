@@ -50,7 +50,7 @@
 </head>
 <body>
     <div class="back-button">
-        <form method="GET" action="{{url_for('movie_list_view')}}">
+        <form method="GET" action="{{url_for('movie_list_view', user_id=user_id)}}">
             <button type="submit"> Go back to Home Page </button>
         </form> 
     </div>
