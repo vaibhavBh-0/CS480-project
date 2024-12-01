@@ -73,51 +73,50 @@ def login(user_email, user_password):
     
 
 def add_movie(movie_name, movie_budget, movie_revenue, movie_casts, movie_genre="drama", movie_rating=0.0):
-    if request.method == 'POST':
-        new_movie = Movie(
-            name=movie_name,
-            budget=movie_budget,
-            revenue=movie_revenue,
-            rating=movie_rating,
-        )
+    new_movie = Movie(
+        name=movie_name,
+        budget=movie_budget,
+        revenue=movie_revenue,
+        rating=movie_rating,
+    )
 
-        new_casts = []
-        for i in range(1, len(movie_casts) + 1):
-            new_cast = Cast(
-                name=movie_casts[i][0], 
-                role=movie_casts[i][1],
+    new_casts = []
+    for i in range(1, len(movie_casts) + 1):
+        new_cast = Cast(
+            name=movie_casts[i][0], 
+            role=movie_casts[i][1],
+        )
+        new_casts.append(new_cast)
+
+    db.session.add(new_movie)
+    has_casts = False
+    if len(new_casts) > 0:
+        has_casts = True
+        db.session.add_all(new_casts)
+    db.session.commit()
+
+    new_genre = Genre(
+        movie_id = new_movie.id,
+        genre = movie_genre
+    )
+
+    casts_ids = []
+    if has_casts:
+        new_participations = []
+        for new_cast in new_casts:
+            participation = Participation(
+                movie_id=new_movie.id, 
+                cast_id=new_cast.id
             )
-            new_casts.append(new_cast)
+            casts_ids.append(new_cast.id)
+            new_participations.append(participation)
 
-        db.session.add(new_movie)
-        has_casts = False
-        if len(new_casts) > 0:
-            has_casts = True
-            db.session.add_all(new_casts)
-        db.session.commit()
+    db.session.add(new_genre)
+    if has_casts:
+        db.session.add_all(new_participations)
+    db.session.commit()
 
-        new_genre = Genre(
-            movie_id = new_movie.id,
-            genre = movie_genre
-        )
-
-        casts_ids = []
-        if has_casts:
-            new_participations = []
-            for new_cast in new_casts:
-                participation = Participation(
-                    movie_id=new_movie.id, 
-                    cast_id=new_cast.id
-                )
-                casts_ids.append(new_cast.id)
-                new_participations.append(participation)
-
-        db.session.add(new_genre)
-        if has_casts:
-            db.session.add_all(new_participations)
-        db.session.commit()
-
-        return new_movie.id, casts_ids
+    return new_movie.id, casts_ids
 
 
 def fetch_movies(movie_name):
