@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Details Page</title>
+    <style>
+        .outer_container {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container{
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+        }
+        .movie-detail-container{
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            justify-items: center;
+        }
+        .movie-user-comment-container{
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            justify-items: center;
+        }
+        .movie-reviews-container{
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            justify-items: center;
+        }
+        .back-button{
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-items: left;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="back-button">
+        <form method="GET" action="{{url_for('movie_list_view', user_id=user_id)}}">
+            <button type="submit"> Go back to Home Page </button>
+        </form> 
+    </div>
+
+    <div class="outer_container">
+        <div class="container">
+            <section id="movie-detail-id">
+                <div class ="movie-detail-container">
+                    <h2>{{movie_details.movie_name}}</h2>
+                    <p>Average Ratings: {{movie_details.avg_rating}} </p>
+                    <p>Genre: {{movie_details.genre}} </p>
+                    <p>Movie Budget: {{movie_details.movie_budget}} </p>
+                    <p>Movie Revenue: {{movie_details.movie_revenue}} </p>
+                </div>
+            </section>
+            {%if user_id%}
+            <section id="movie-user-comment-id">
+                <div class = "movie-user-comment-container">
+                    {%if user_comment%}
+                    <h2> Update your Comment </h2>
+                    {% else %}
+                    <h2> Post your Comment </h2>
+                    {% endif %}
+                    <form method="POST" action="{{url_for('movie_review_details_view', movie_id=movie_details.movie_id, user_id=user_id)}}">
+                        {%if user_comment%}
+                            {% with comment = user_comment.comment%}
+                            <input type="textbox" name="comment" id="user_review_textbox" 
+                            value="{{comment}}" required>
+                            <input type="number" name="rating" id="user_review_rating" value="{{user_comment.rating}}" required min=0 max=5>
+                            {% endwith %}
+                        {% else %}
+                            <input type="textbox" name="comment" id="user_review_textbox" required>
+                            <input type="number" name="rating" id="user_review_rating" required min=0 max=5>
+                        {% endif %}
+                            <input type="submit" name="comment_submission" value="post"> 
+                        {%if user_comment%}
+                            <input type="submit" name="comment_submission" value="delete"> 
+                        {% endif %}
+                    </form>
+                </div>
+            </section>
+            {%endif%}
+            <section id="movie-reviews-id">
+                <div class ="movie-reviews-container">
+                    <h2> Movie Reviews </h2>
+                    {% for movie_comment in movie_comments %}
+                    <ul>
+                        <li>
+                            <p> Posted By: {{movie_comment.user_id}}</p>
+                            <p> Posted On: {{movie_comment.timestamp}}</p>
+                            <p> Rating: {{movie_comment.rating}}</p>
+                            <p> Review: {{movie_comment.comment}}</p>
+                        </li>
+                    </ul>
+                    {% endfor %}
+                </div>
+            </section>  
+            </div>
+    </div>
+</body>
+</html>
