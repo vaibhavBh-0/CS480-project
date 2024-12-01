@@ -124,5 +124,84 @@ def fetch_movies(movie_name):
     return [movie.id for movie in movies]
 
 
+@app.route('/reviews', defaults={'movie_id': None}, methods=["GET", "POST"])
+def reviews(movie_id):
+    if request.method == "POST":
+       
+        new_review = Review(
+            content=request.form['review_content'], 
+            rating=int(request.form['review_rating']), 
+            movie_id=request.form['movie_id'], 
+            user_id=request.form['user_id'],  
+        )
+        try:
+            db.session.add(new_review)
+            db.session.commit()
+            movie = Movie.query.get(movie_id)
+            reviews = Review.query.filter_by(movie_id=movie_id).all()
+            average_rating = (sum([review.rating for review in reviews]) / len(reviews))
+            movie.rating = round(average_rating, 1) 
+            db.session.commit()
+
+            return redirect('/reviews')  
+        except Exception as e:
+            return f"There was an issue adding the review: {str(e)}"
+
+    
+    reviews = Review.query.order_by(Review.date_created).all()
+    movies = Movie.query.all()  
+    return render_template('reviews.html', tasks=reviews, movies=movies)
+def update_review():
+    if request.method == "POST":
+        movie_id = int(request.form['movie_id'])
+        user_id = int(request.form['user_id'])
+        
+        review = Review.query.filter_by(movie_id=movie_id, user_id=user_id).first()
+        if not review:
+            return "Error"
+
+        
+        review.content = request.form['updated_review']
+        review.rating = int(request.form['updated_rating'])
+            
+        db.session.commit()
+
+            
+        movie = Movie.query.get(movie_id)
+        if movie:
+                reviews = Review.query.filter_by(movie_id=movie_id).all()
+                average_rating = sum([r.rating for r in reviews]) / len(reviews)
+                movie.rating = round(average_rating, 1)
+                db.session.commit()
+            
+        return redirect('/reviews')
+def delete_review():
+    if request.method == "POST":
+       
+        movie_id = int(request.form['movie_id'])
+        user_id = int(request.form['user_id'])
+        
+
+        review = Review.query.filter_by(movie_id=movie_id, user_id=user_id).first()
+        if not review:
+            return "Error!"
+
+        
+        db.session.delete(review)
+        db.session.commit()
+
+            
+        movie = Movie.query.get(movie_id)
+        if movie:
+            reviews = Review.query.filter_by(movie_id=movie_id).all()
+            if reviews:
+                    average_rating = sum([r.rating for r in reviews]) / len(reviews)
+                    movie.rating = round(average_rating, 1)
+            else:
+                    movie.ratin=None
+                    
+            
+            return redirect('/reviews')
+
 if __name__ == "__main__":
     app.run(debug=True)
