@@ -2,152 +2,127 @@ from flask import Flask, render_template, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CheckConstraint
 from datetime import datetime
+from database import *
+import re
+
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
 db = SQLAlchemy(app)
 
-
-class User(db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(50), nullable=False, unique=True)
-    password = db.Column(db.String(50), nullable=False)
-    __table_args__ = (
-        db.CheckConstraint("LENGTH(password) >= 8", name='check_password_length'),
-    )
-    role = db.Column(db.String(50), nullable=False)
-    date_created = db.Column(db.DateTime, default=datetime.now())
-
-    def __repr__(self):
-        return f"User id: {self.id}"
-    
-
-class Movie(db.Model):
-    __tablename__ = 'movies'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    budget = db.Column(db.Numeric(15, 2))
-    revenue = db.Column(db.Numeric(15, 2))
-    rating = db.Column(db.Numeric(2, 1))
-    # cast_members = db.relationship('Cast', backref='movie', lazy=True)  # This lets each movie to keep track of its casts
-    date_created = db.Column(db.DateTime, default=datetime.now())
-
-    def __repr__(self):
-        return f"Movie id: {self.id}"
-
-
-class Cast(db.Model):
-    __tablename__ = 'casts'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    role = db.Column(db.String(50), nullable=False)
-    date_created = db.Column(db.DateTime, default=datetime.now())
-
-    def __repr__(self):
-        return f"Cast id: {self.id}"
-    
-
-class Participation(db.Model):
-    __tablename__ = 'participations'
-    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), primary_key=True)
-    cast_id = db.Column(db.Integer, db.ForeignKey('casts.id'), primary_key=True)
-
-
-class Genre(db.Model):
-    __tablename__ = 'genres'
-    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), primary_key=True)
-    genre = db.Column(db.String(20), primary_key=True)
-
-
-class Review(db.Model):
-    __tablename__ = 'reviews'
-    id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Numeric(15, 2))
-    rating = db.Column(db.Integer, nullable=False)
-    __table_args__ = (
-        db.CheckConstraint('rating BETWEEN 1 AND 10', name='check_rating_range'),
-    )
-    movie_id = db.Column(db.Integer, db.ForeignKey('movies.id'), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('casts.id'), primary_key=True)
-    date_created = db.Column(db.DateTime, default=datetime.now())
-
-    def __repr__(self):
-        return f"Movie id: {self.id}"
-
-
 with app.app_context():
     db.drop_all()
     db.create_all()
 
+ADMIN_NAME = 'ADMIN'
+ADMIN_EMAIL = 'ADMIN_PASSWORD'
+ADMIN_PASSWORD = '123456789'
+admin_user = User(
+    name=ADMIN_NAME,
+    email=ADMIN_EMAIL,
+    password=ADMIN_PASSWORD,
+    role='admin',
+)
+db.session.add(admin_user)
+db.session.commit()
 
-@app.route('/', methods=["POST", "GET"])
-def login():
-    if request.method == 'POST':
-        new_user = User(
-            name=request.form['user_name'],
-            email=request.form['user_email'],
-            password=request.form['user_password'],
-            role=request.form['user_role'],
-        )
 
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-            return redirect('/')
-        except:
-            return 'There was an issue adding the new user'
+def fetch_user(email):
+    return User.query.filter_by(email=email).first()
 
-    else:
-        users = User.query.order_by(User.date_created).all()
-        return render_template('index.html', tasks=users)
+
+def is_valid_email_format(email):
+    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+    return re.match(email_regex, email) is not None
+
+
+def fetch_movies_by_name(substring):
+    return Movie.query.filter(Movie.name.ilike(f"%{substring}%")).all()
+
+
+def signup(user_name, user_email, user_password):
+
+    if fetch_user(user_email) is not None:
+        return "User exists!"
+    
+    if not is_valid_email_format(user_email):
+        return "Please input a valid email"
+    
+    new_user = User(
+        name=user_name,
+        email=user_email,
+        password=user_password,
+        role='user',
+    )
+
+    db.session.add(new_user)
+    db.session.commit()
+    return new_user.id
+
+
+def login(user_email, user_password):
+
+    user = fetch_user(user_email)
+    if user is None:
+        return "User doesn't exists!"
+    
+    if user.password != user_password:
+        return "Password mismatches!"
+
+    return user.id
     
 
-@app.route('/movies', methods=["POST", "GET"])
-def movie():
+def add_movie(movie_name, movie_budget, movie_revenue, movie_casts, movie_genre="drama", movie_rating=0.0):
     if request.method == 'POST':
         new_movie = Movie(
-            name=request.form['movie_name'],
-            budget=float(request.form['movie_budget']),
-            revenue=float(request.form['movie_revenue']),
-            rating=float(request.form['movie_rating']),
+            name=movie_name,
+            budget=movie_budget,
+            revenue=movie_revenue,
+            rating=movie_rating,
         )
 
         new_casts = []
-        cast_count = len([key for key in request.form.keys() if key.startswith('cast_name_')])
-        for i in range(1, cast_count + 1):
+        for i in range(1, len(movie_casts) + 1):
             new_cast = Cast(
-                name=request.form.get(f'cast_name_{i}'), 
-                role=request.form.get(f'cast_role_{i}'),
+                name=movie_casts[i][0], 
+                role=movie_casts[i][1],
             )
             new_casts.append(new_cast)
 
         db.session.add(new_movie)
-        db.session.add_all(new_casts)
+        has_casts = False
+        if len(new_casts) > 0:
+            has_casts = True
+            db.session.add_all(new_casts)
         db.session.commit()
 
         new_genre = Genre(
             movie_id = new_movie.id,
-            genre = request.form['movie_genre']
+            genre = movie_genre
         )
 
-        new_participations = []
-        for new_cast in new_casts:
-            participation = Participation(
-                movie_id=new_movie.id, 
-                cast_id=new_cast.id
-            )
-            new_participations.append(participation)
+        casts_ids = []
+        if has_casts:
+            new_participations = []
+            for new_cast in new_casts:
+                participation = Participation(
+                    movie_id=new_movie.id, 
+                    cast_id=new_cast.id
+                )
+                casts_ids.append(new_cast.id)
+                new_participations.append(participation)
 
         db.session.add(new_genre)
-        db.session.add_all(new_participations)
+        if has_casts:
+            db.session.add_all(new_participations)
         db.session.commit()
 
-        return redirect('/movies')
-    else:
-        movies = Movie.query.order_by(Movie.date_created).all()
-        return render_template('movies.html', tasks=movies)
+        return new_movie.id, casts_ids
+
+
+def fetch_movies(movie_name):
+    movies = fetch_movies_by_name(movie_name)
+    return [movie.id for movie in movies]
 
 
 if __name__ == "__main__":
