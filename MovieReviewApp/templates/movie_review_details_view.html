@@ -79,9 +79,11 @@
                             {% with comment = user_comment.comment%}
                             <input type="textbox" name="comment" id="user_review_textbox" 
                             value="{{comment}}" required>
+                            <input type="number" name="rating" id="user_review_rating" value="{{user_comment.rating}}" required min=0 max=5>
                             {% endwith %}
                         {% else %}
                             <input type="textbox" name="comment" id="user_review_textbox" required>
+                            <input type="number" name="rating" id="user_review_rating" required min=0 max=5>
                         {% endif %}
                             <input type="submit" name="comment_submission" value="post"> 
                         {%if user_comment%}

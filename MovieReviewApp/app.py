@@ -32,7 +32,7 @@ def login_view():
     sign_up = False
 
     if request.method == "POST":
-        username = request.form["username"]
+        email = request.form["email"]
         password = request.form["password"]
         value = request.form["submission"]
         if value == 'Login':
@@ -53,11 +53,12 @@ def login_view():
 
                 # TODO: (2.) Route to previous screen - wherever the login view was called.
                 # return redirect(url_for('movie_review_details_view', movie_id="69", user_id=user_info['user_id']))
-                return render_template('login_successful.html', user_info=user_info)
+                return redirect(url_for('movie_list_view', user_id=user_info['user_id']))
+                # return render_template('login_successful.html', user_info=user_info)
             else:
                 flash('User login not successful! Username or Password is invalid.', 'failed.') 
                 return render_template('login_view.html', sign_up=sign_up)
-        elif value == 'signup+login':
+        elif value == 'Signup & login':
             # TODO: Insert user into database and log them in.
             # return redirect(url_for('movie_review_details_view', movie_id="69", user_id=user_info['user_id']))
             user_info = {
@@ -65,21 +66,18 @@ def login_view():
                     "user_role": "general_user"
             }
 
-            email_id = request.form["email"]
+            username = request.form["username"]
 
             sign_up = True
 
             user_name_does_not_exists = True
 
             if user_name_does_not_exists:
-                return render_template('login_successful.html', user_info=user_info)
+                return redirect(url_for('movie_list_view', user_id=user_info['user_id']))
             else:
                 flash('User login not successful! Username or Password is invalid.', 'failed.') 
                 return render_template('login_view.html', sign_up=sign_up)
     elif request.method == "GET":
-        print(request.args)
-        print(request.url)
-        # print(dir(request))
         if 'submission' in request.args:
             # User is trying to sign up.
             value = request.args['submission']
@@ -89,13 +87,70 @@ def login_view():
     return render_template('login_view.html', sign_up=sign_up)
     
 
-@app.route("/")
-def movie_list_view():
+@app.route("/",methods=["GET", "POST"])
+@app.route("/<user_id>",methods=["GET", "POST"])
+def movie_list_view(user_id=None):
     # TODO: Saran
     # 1. List the content of all movies. 
     # 2. Navigate to Screen 1 when not logged in, 
     # Screen 3 when selecting a movie, Screen 4 when logged in and user_role is "admin" 
-    return render_template("movie_list_view.html")
+    if request.method == 'POST':
+        search_term = request.form.get('search')
+        if search_term:
+            # Redirect to the GET request with search term and page 1 (for new search)
+            return redirect(url_for('movie_list_view', search=search_term, page=1))
+
+    # Get current page and search term from query parameters
+    page = request.args.get('page', 1, type=int)
+    search_term = request.args.get('search')
+    per_page = 100
+    time_start = time.time()
+
+    if search_term:
+        movies = [
+             {
+            'movie_id': '1234',
+            'movie_name': 'The Shawshank Redemption',
+            'movie_budget': '$25 million',
+            'movie_revenue': '$73.3 million',
+            'genre': 'Escape from Prison',
+            'avg_rating': 4.8
+            }
+        ]
+        # movies = search_books(search_term)
+    else:
+        # Check if the response is already cached
+        movies = cache.get('movies')
+        # books = cache.get('books')
+        # TODO: When to fetch instead of cache needs to be investigated.
+        if movies:
+            print("Used cache to fetch from database.")
+        else:
+            movies = [
+                    {
+                    'movie_id': '1234',
+                    'movie_name': 'The Shawshank Redemption',
+                    'movie_budget': '$25 million',
+                    'movie_revenue': '$73.3 million',
+                    'genre': 'Escape from Prison',
+                    'avg_rating': 4.8
+                }
+            ]
+            cache.set("movies", movies)
+
+    total_rows = len(movies)
+    range_start = (page - 1) * per_page
+    range_end = min(page * per_page, total_rows)
+    paginated_books = movies[range_start: range_end]
+    total_pages = (total_rows + per_page - 1) // per_page
+    admin = 1 # insert condition
+    # print(user_id)
+
+    return render_template('movie_list_view.html',
+                           total_rows=total_rows,
+                           books=paginated_books, page=page, total_pages=total_pages,
+                           range_start=range_start, range_end=range_end, 
+                           search=search_term, user_id=user_id, admin=admin)
     
 @app.route("/movie_detail_view/<movie_id>", methods=["GET"])
 @app.route("/movie_detail_view/<movie_id>/<user_id>", methods=["GET", "POST"])
@@ -140,7 +195,7 @@ def movie_review_details_view(movie_id, user_id=None):
             'movie_budget': '$25 million',
             'movie_revenue': '$73.3 million',
             'genre': 'Escape from Prison',
-            'avg_rating': '4.8/5.0'
+            'avg_rating': 4.8
         }
 
         now = time.time()
@@ -152,7 +207,7 @@ def movie_review_details_view(movie_id, user_id=None):
                 'review_id' : '1',
                 'movie_id' : '1234',
                 'comment': "A masterpiece!",
-                'rating': '4.8/5.0'
+                'rating': 5.0
             },
             {
                 'timestamp': now - in_minutes(25),
@@ -160,15 +215,15 @@ def movie_review_details_view(movie_id, user_id=None):
                 'review_id' : '2',
                 'movie_id' : '1234',
                 'comment': "A masterpiece!",
-                'rating': '4.8/5.0'
+                'rating': 3
             },
             {
                 'timestamp': now - in_minutes(30),
                 'user_id' : '1234',
                 'review_id' : '3',
                 'movie_id' : '1234',
-                 'comment': "A masterpiece!",
-                'rating': '4.8/5.0'
+                'comment': "A masterpiece!",
+                'rating': 4
             }
         ]
 
@@ -202,3 +257,15 @@ def movie_review_details_view(movie_id, user_id=None):
                            movie_comments=movie_comments)
 
 
+@app.route("/movie_detail_view", methods=["GET", "POST"])
+def add_movie_details_view():
+    if request.method == "POST":
+        # Successful insertion into the database.
+        successful = True
+        if successful:
+            return redirect(url_for('movie_list_view'))
+        else:
+            flash('Some Error in insertion of data.', 'failed.') 
+
+    crew_count = int(request.args.get('crew_count', 1))
+    return render_template("add_movie_details_view.html", crew_count=crew_count)

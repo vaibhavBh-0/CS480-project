@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Login</title>
+    <title>Add Movie Details</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,24 +14,24 @@
             height: 100vh;
             margin: 0;
         }
-        .login-container {
+        .movie-detail-container {
             background-color: white;
             padding: 20px;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
-        .login-container h2 {
+        .movie-detail-container h2 {
             margin-bottom: 20px;
         }
-        .login-container input[type="text"],
-        .login-container input[type="password"] {
+        .movie-detail-container input[type="text"],
+        .movie-detail-container input[type="password"] {
             width: 100%;
             padding: 10px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 3px;
         }
-        .login-container input[type="submit"] {
+        .movie-detail-container input[type="submit"] {
             width: 100%;
             padding: 10px;
             background-color: #28a745;
@@ -40,14 +40,14 @@
             border-radius: 3px;
             cursor: pointer;
         }
-        .login-container input[type="submit"]:hover {
+        .movie-detail-container input[type="submit"]:hover {
             background-color: #218838;
         }
     </style>
 </head>
 <body>
 
-<div class="login-container">
+<div class="movie-detail-container">
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
@@ -57,23 +57,18 @@
     {% endfor %}
     {% endif %}
     {% endwith %}
-    {% if not sign_up %}
-    <h2>Login</h2>
-    <form method ="POST" action="{{url_for('login_view')}}">
-        <input type="text" name="email" id="email" placeholder="Email" required>
-        <input type="password" name="password" id="pwd" placeholder="Password" required>
-        <input type="submit" name="submission" value="Login">
-    </form>
-    <form method = "GET" action="{{url_for('login_view')}}">
-        <button type="submit" name="submission" value="signup">Signup</button>
-    </form>
-    {% else %}
-    <h2>Sign up</h2>
-    <form method ="POST" action="{{url_for('login_view')}}">
-        <input type="text" name="username" id="usn" placeholder="Username" required>
-        <input type="text" name="email" id="email" placeholder="Email ID" required>
-        <input type="password" name="password" id="pwd" placeholder="Password" required>
-        <input type="submit" name="submission" value="Signup & login">
+    {% if crew_count > 0 %}
+    <h2>Add Movie Detail</h2>
+    <form method ="POST" action="{{url_for('add_movie_details_view')}}">
+        <input type="text" name="movie_name" id="movie_name" placeholder="Movie Name" required>
+        <input type="text" name="budget" id="budget" placeholder="Movie Budget" >
+        <input type="text" name="revenue" id="revenue" placeholder="Movie Revenue" >
+        <input type="text" name="genre" id="genre" placeholder="Movie Genre" >
+        {% for idx in range(crew_count) %}
+            <input type="text" name="crew_name_{{idx}}" id="crew_name" placeholder="Crew Name #{{idx + 1}}" required>
+            <input type="text" name="crew_role_{{idx}}" id="crew_role" placeholder="Crew Role #{{idx + 1}}" required>
+        {% endfor %}
+        <input type="submit" name="submission" value="Add">
     </form>
     {% endif %}
 </div>

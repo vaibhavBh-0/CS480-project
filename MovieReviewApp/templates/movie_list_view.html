@@ -1,0 +1,122 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Movie List
+{% endblock %}
+
+{% block content %}
+
+
+{% if admin == 1 %}
+<form method="GET" action="{{url_for('add_movie_details_view')}}" class="mb-4 d-flex">
+    <p>Select number of crews to be added to the movie.</p>
+    <input type="number" name="crew_count" value=1 min=1>
+    <button class="btn btn-outline-success" type="submit">Add Movie Details</button>
+</form>
+{% endif %}
+
+<h1 class="mb-4">Movie List
+{% if search %}
+    for {{ search }}
+{% endif %}
+</h1>
+<!-- Search Form -->
+<form method="POST" action="{{ url_for('movie_list_view') }}" class="mb-4 d-flex">
+    <input class="form-control me-2" type="text" name="search" placeholder="Search books"
+           value="{{ request.form.get('search', '') }}">
+    <button class="btn btn-outline-success" type="submit">Search</button>
+</form>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Total movies: <span class="text-dark">{{ total_rows }}</span></h4>
+    <h4>Showing movies <span class="text-dark">{{ range_start+1 }}</span> to <span class="text-dark">{{ range_end }}</span>
+    </h4>
+    <h4>Page <span class="text-dark">{{ page }}</span> of <span class="text-dark">{{ total_pages }}</span></h4>
+</div>
+<table id="books_table" class="table table-bordered table-hover mt-3">
+    <thead>
+    <tr> 
+        <th>Movie Name</th>
+        <th>Movie Budget</th>
+        <th>Movie Revenue</th>
+        <th>Genre</th>
+        <th>Average Rating</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for book in books %}
+    <tr>
+        <td>{{ book.movie_name }}</td>
+        <td>{{ book.movie_budget }}</td>
+        <td>{{ book.movie_revenue }}</td>
+        <td>{{ book.genre }}</td>
+        <td>{{ book.avg_rating }}</td>
+        <td>
+
+                <!-- View Button -->
+                <a href="{{ url_for('movie_review_details_view', movie_id=book.movie_id, user_id=user_id) }}" class="btn btn-sm btn-info">View</a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center">
+        <!-- Previous Button -->
+        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('movie_list_view', search=search, page=page-1) }}">Previous</a>
+        </li>
+
+        <!-- First Page Always Visible -->
+        {% if page > 3 %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('movie_list_view', search=search, page=1) }}">1</a></li>
+        <li class="page-item disabled"><a class="page-link">...</a></li>
+        {% endif %}
+
+        <!-- Page Numbers Before Current Page -->
+        {% for num in range(1, page) %}
+        {% if num >= page - 2 and num < page %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('movie_list_view', search=search, page=num) }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+
+        <!-- Current Page (Disabled) -->
+        <li class="page-item active" aria-current="page">
+            <a class="page-link">{{ page }}</a>
+        </li>
+
+        <!-- Page Numbers After Current Page -->
+        {% for num in range(page + 1, total_pages + 1) %}
+        {% if num <= page + 2 %}
+        <li class="page-item"><a class="page-link" href="{{ url_for('movie_list_view', search=search, page=num) }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+
+        <!-- Last Page Always Visible -->
+        {% if page < total_pages - 2 %}
+        <li class="page-item disabled"><a class="page-link">...</a></li>
+        <li class="page-item"><a class="page-link" href="{{ url_for('movie_list_view', search=search, page=total_pages) }}">{{ total_pages
+            }}</a></li>
+        {% endif %}
+
+        <!-- Next Button -->
+        <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('movie_list_view', search=search, page=page+1) }}">Next</a>
+        </li>
+    </ul>
+</nav>
+
+
+{% endblock %}
+{% block scripts %}
+<script>
+    new DataTable('#books_table', {
+        paging: false,
+        info: false,
+        language: {
+            search: 'Filter records within the following table:'
+        }
+    });
+</script>
+{% endblock %}
