@@ -20,7 +20,7 @@ movies\bin\activate
 - Install Python dependencies 
 
 ```shell
-pip install flask PyMySQL python-dotenv faker Flask-Caching redis cryptography flask-sqlalchemy sqlalchemy
+pip install flask PyMySQL python-dotenv faker Flask-Caching redis cryptography flask-sqlalchemy sqlalchemy numpy
 ```
 Or use the requirements.txt file to install the depenedcies.
 
