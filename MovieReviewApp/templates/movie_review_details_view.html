@@ -86,9 +86,15 @@
                             <input type="number" name="rating" id="user_review_rating" required min=0 max=5>
                         {% endif %}
                             <input type="submit" name="comment_submission" value="post"> 
-                        {%if user_comment%}
-                            <input type="submit" name="comment_submission" value="delete"> 
-                        {% endif %}
+
+                    </form>
+                </div>
+                <div class = "movie-user-comment-container">
+                    <form method="POST" action="{{ url_for('movie_review_details_view', movie_id=movie_details.movie_id, user_id=user_id) }}">
+                        <input type="hidden" name="comment_submission" value="DELETE">
+                        <button type="submit">Delete my review</button>
+                    </form>
+
                     </form>
                 </div>
             </section>

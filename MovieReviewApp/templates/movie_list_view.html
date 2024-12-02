@@ -24,7 +24,7 @@ Movie List
 </h1>
 <!-- Search Form -->
 <form method="POST" action="{{ url_for('movie_list_view') }}" class="mb-4 d-flex">
-    <input class="form-control me-2" type="text" name="search" placeholder="Search books"
+    <input class="form-control me-2" type="text" name="search" placeholder="Search Movies"
            value="{{ request.form.get('search', '') }}">
     <button class="btn btn-outline-success" type="submit">Search</button>
 </form>
@@ -40,7 +40,6 @@ Movie List
         <th>Movie Name</th>
         <th>Movie Budget</th>
         <th>Movie Revenue</th>
-        <th>Genre</th>
         <th>Average Rating</th>
         <th>Action</th>
     </tr>
@@ -51,7 +50,6 @@ Movie List
         <td>{{ book.movie_name }}</td>
         <td>{{ book.movie_budget }}</td>
         <td>{{ book.movie_revenue }}</td>
-        <td>{{ book.genre }}</td>
         <td>{{ book.avg_rating }}</td>
         <td>
 
@@ -110,15 +108,4 @@ Movie List
 </nav>
 
 
-{% endblock %}
-{% block scripts %}
-<script>
-    new DataTable('#books_table', {
-        paging: false,
-        info: false,
-        language: {
-            search: 'Filter records within the following table:'
-        }
-    });
-</script>
 {% endblock %}

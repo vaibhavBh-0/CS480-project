@@ -37,7 +37,9 @@ class Movie(db.Model):
     name = db.Column(db.String(50), nullable=False)
     budget = db.Column(db.Numeric(15, 2))
     revenue = db.Column(db.Numeric(15, 2))
+    genre = db.Column(db.String(50))
     rating = db.Column(db.Numeric(2, 1))
+
     # cast_members = db.relationship('Cast', backref='movie', lazy=True)  # This lets each movie to keep track of its casts
     date_created = db.Column(db.DateTime, default=datetime.now())
 
@@ -71,7 +73,7 @@ class Genre(db.Model):
 class Review(db.Model):
     __tablename__ = 'reviews'
     id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.Numeric(15, 2))
+    content = db.Column(db.String(50))
     rating = db.Column(db.Integer, nullable=False)
     __table_args__ = (
         db.CheckConstraint('rating BETWEEN 1 AND 10', name='check_rating_range'),

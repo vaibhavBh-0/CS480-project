@@ -1,6 +1,6 @@
 from flask import Flask, render_template, url_for, request, redirect, current_app
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import CheckConstraint
+from sqlalchemy import CheckConstraint, text
 from datetime import datetime
 # from .flashenv import *
 from database import *
@@ -33,16 +33,20 @@ if reset_database_flag:
 
 
 def fetch_user(email):
+
     return User.query.filter_by(email=email).first()
 
 
 def is_valid_email_format(email):
+
     email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
     return re.match(email_regex, email) is not None
 
 
 def fetch_movies_by_name(substring):
-    return Movie.query.filter(Movie.name.ilike(f"%{substring}%")).all()
+    query_text = text(f"SELECT * FROM movies WHERE name LIKE '%{substring}%';")
+    movie_data = db.session.execute(query_text).fetchall()
+    return movie_data
 
 
 def signup(user_name, user_email, user_password):
@@ -128,9 +132,15 @@ def fetch_movies(movie_name):
     movies = fetch_movies_by_name(movie_name)
     return movies
 
+def fetch_genre(movie_id):
+    
+    query_text = text(f"SELECT genre FROM genres WHERE movie_id = {movie_id};")
+    genre_list = db.session.execute(query_text).fetchall() 
+    return genre_list
 
 def reviews(movie_id,review_content,rating,user_id):
     new_review = Review(
+        id = str(movie_id)+str(user_id),
         content=review_content, 
         rating=rating, 
         movie_id=movie_id, 
@@ -149,32 +159,41 @@ def reviews(movie_id,review_content,rating,user_id):
     except Exception as e:
         return f"There was an issue adding the review: {str(e)}"
 
-    
-def update_review(movie_id,user_id,updated_review,updated_rating):
-    movie_id = movie_id
-    user_id = user_id
-    
-    review = Review.query.filter_by(movie_id=movie_id, user_id=user_id).first()
-    if not review:
-        return "Error"
-
-    
-    review.content = updated_review
-    review.rating = updated_rating
-        
+def update_movie(movie_id, updated_rating):
+    query_text = text(f"UPDATE movies SET rating = {updated_rating} WHERE id = {movie_id};")
+    db.session.execute(query_text)
     db.session.commit()
 
-        
-    movie = Movie.query.get(movie_id)
-    if movie:
-            reviews = Review.query.filter_by(movie_id=movie_id).all()
-            average_rating = sum([r.rating for r in reviews]) / len(reviews)
-            movie.rating = round(average_rating, 1)
-            db.session.commit()
-    else:
-        return "Movie not found Error"
+    
+def update_review(movie_id,user_id, review_id, updated_review,updated_rating):
+    movie_id = movie_id
+    user_id = user_id
 
-    return review.id
+    query_text = text(f"UPDATE reviews SET content = '{updated_review}', rating = {updated_rating} WHERE id = {review_id};")
+    db.session.execute(query_text)
+    db.session.commit()
+
+    # review = Review.query.filter_by(id=review_id).first()
+    # if not review:
+    #     return "Error"
+
+    
+    # review.content = updated_review
+    # review.rating = updated_rating
+        
+    # db.session.commit()
+
+        
+    # movie = Movie.query.get(movie_id)
+    # if movie:
+    #         reviews = Review.query.filter_by(movie_id=movie_id).all()
+    #         average_rating = sum([r.rating for r in reviews]) / len(reviews)
+    #         movie.rating = round(average_rating, 1)
+    #         db.session.commit()
+    # else:
+    #     return "Movie not found Error"
+
+    return review_id
 
             
         
