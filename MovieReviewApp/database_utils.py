@@ -86,7 +86,7 @@ def add_movie(movie_name, movie_budget, movie_revenue, movie_casts, movie_genre=
     )
 
     new_casts = []
-    for i in range(1, len(movie_casts) + 1):
+    for i in range(len(movie_casts)):
         new_cast = Cast(
             name=movie_casts[i][0], 
             role=movie_casts[i][1],
