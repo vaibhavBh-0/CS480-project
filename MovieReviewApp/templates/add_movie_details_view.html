@@ -24,6 +24,7 @@
             margin-bottom: 20px;
         }
         .movie-detail-container input[type="text"],
+        .movie-detail-container input[type="numeric"],
         .movie-detail-container input[type="password"] {
             width: 100%;
             padding: 10px;
@@ -61,9 +62,9 @@
     <h2>Add Movie Detail</h2>
     <form method ="POST" action="{{url_for('add_movie_details_view', user_id=user_id)}}">
         <input type="text" name="movie_name" id="movie_name" placeholder="Movie Name" required>
-        <input type="text" name="budget" id="budget" placeholder="Movie Budget" >
-        <input type="text" name="revenue" id="revenue" placeholder="Movie Revenue" >
-        <input type="text" name="genre" id="genre" placeholder="Movie Genre" >
+        <input type="numeric" name="budget" id="budget" placeholder="Movie Budget" min=0>
+        <input type="numeric" name="revenue" id="revenue" placeholder="Movie Revenue" min=0>
+        <input type="text" name="genre" id="genre" placeholder="Movie Genre" required>
         {% for idx in range(crew_count) %}
             <input type="text" name="crew_name_{{idx}}" id="crew_name" placeholder="Crew Name #{{idx + 1}}" required>
             <input type="text" name="crew_role_{{idx}}" id="crew_role" placeholder="Crew Role #{{idx + 1}}" required>
