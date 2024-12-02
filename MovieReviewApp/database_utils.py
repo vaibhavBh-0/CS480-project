@@ -204,5 +204,7 @@ def delete_review(movie_id,user_id):
         return "Movie error not found!"
     
     return 1
+
+
 def fetch_review(movie_id):
     return Review.query.filter_by(movie_id=movie_id).all()
