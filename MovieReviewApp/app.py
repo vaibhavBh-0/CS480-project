@@ -247,12 +247,50 @@ def movie_review_details_view(movie_id, user_id=None):
 def add_movie_details_view(user_id):
     if request.method == "POST":
         # Successful insertion into the database.
-        successful = True
-        print(f"User ID is {user_id}")
-        if successful:
-            return redirect(url_for('movie_list_view', user_id=user_id))
-        else:
-            flash('Some Error in insertion of data.', 'failed.') 
+        form = request.form
+        # Don't use float('nan')
+        invalid_numeric_value = None
+
+        crew_count = len([key for key in form.keys() if 'crew_name' in key])
+
+        if crew_count == 0:
+            crew_count = 1
+            flash('crew member mismatch', 'failed.')
+            return render_template("add_movie_details_view.html", user_id=user_id, crew_count=crew_count)
+
+        form = dict(form)
+        movie_name = form["movie_name"]
+
+        # validating numeric fields.
+        for key in ['budget', 'revenue']:
+            if key in form:
+                value = str(form[key])
+                if value.isnumeric() or (value.startswith('-') and value[1:].isnumeric()):
+                    value = max(int(value), 0)
+                    print(value)
+                    form[key] = value
+                else:
+                    flash('Invalid numeric field', 'failed.')
+                    return render_template("add_movie_details_view.html", user_id=user_id, crew_count=crew_count)
+
+        movie_budget = form.get("budget", invalid_numeric_value)
+        movie_revenue = form.get("revenue", invalid_numeric_value)
+        movie_genre = form["genre"]
+        movie_rating = 0
+
+        movie_casts = []
+
+        for idx in range(crew_count):
+            crew_name_key = f'crew_name_{idx}'
+            crew_role_key = f'crew_role_{idx}'
+            item = (form[crew_name_key], form[crew_role_key])
+            movie_casts.append(item)
+
+        _ = add_movie(movie_name, movie_budget=movie_budget, 
+                      movie_revenue=movie_revenue, movie_casts=movie_casts,
+                      movie_genre=movie_genre, movie_rating=movie_rating)
+        
+        return redirect(url_for('movie_list_view', user_id=user_id))
 
     crew_count = int(request.args.get('crew_count', 1))
     return render_template("add_movie_details_view.html", user_id=user_id, crew_count=crew_count)
