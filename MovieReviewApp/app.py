@@ -5,30 +5,32 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
 from flask_caching import Cache
 
+from app_singleton import get_app_config
 from utils import get_string_date_from_time
+
+from database_utils import *
 
 
 if not load_dotenv('.flashenv'):
     print("Environment var not found")
 
-app = Flask(__name__)
-# Set environment variables and secrets.
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
-app.config["CACHE_TYPE"] = os.getenv("CACHE_TYPE")
-app.config["CACHE_REDIS_HOST"] = os.getenv("CACHE_REDIS_HOST")
-val = os.getenv("CACHE_REDIS_PORT")
-print(f'val: {val} and type: {type(val)}')
-app.config["CACHE_REDIS_PORT"] = int(os.getenv("CACHE_REDIS_PORT"))
-app.config["CACHE_DEFAULT_TIMEOUT"] = int(os.getenv("CACHE_DEFAULT_TIMEOUT"))
-app.config["CACHE_REDIS_DB"] = int(os.getenv("CACHE_REDIS_DB"))
+# app = Flask(__name__)
+# # Set environment variables and secrets.
+# app.secret_key = os.getenv("FLASK_SECRET_KEY")
+# app.config["CACHE_TYPE"] = os.getenv("CACHE_TYPE")
+# app.config["CACHE_REDIS_HOST"] = os.getenv("CACHE_REDIS_HOST")
+# val = os.getenv("CACHE_REDIS_PORT")
+# print(f'val: {val} and type: {type(val)}')
+# app.config["CACHE_REDIS_PORT"] = int(os.getenv("CACHE_REDIS_PORT"))
+# app.config["CACHE_DEFAULT_TIMEOUT"] = int(os.getenv("CACHE_DEFAULT_TIMEOUT"))
+# app.config["CACHE_REDIS_DB"] = int(os.getenv("CACHE_REDIS_DB"))
+
+# app = get_app_config()
 
 cache = Cache(app)
 
 @app.route("/login", methods=["GET", "POST"])
 def login_view():
-    # TODO:
-    # 1. Connect to user table to verify correct username and/or password. - Shomee, Peyman
-    # 2. Pass the user_info to previous screen. - Vaibhav
     sign_up = False
 
     if request.method == "POST":
@@ -36,44 +38,25 @@ def login_view():
         password = request.form["password"]
         value = request.form["submission"]
         if value == 'Login':
-                # TODO: (1.) We assume it's verfied for now.
-            verified = True
+
+            result = str(login(email, password))
+            # User ID is int.
+            verified = result.isnumeric()
             
             if verified:
-                user_info = {
-                    "user_id" : "1234",
-                    "user_role": "general_user"
-                }
-
-                # Other examples
-                # user_info = {
-                #     "user_id" : "1234",
-                #     "user_role": "admin"
-                # }
-
-                # TODO: (2.) Route to previous screen - wherever the login view was called.
-                # return redirect(url_for('movie_review_details_view', movie_id="69", user_id=user_info['user_id']))
-                return redirect(url_for('movie_list_view', user_id=user_info['user_id']))
-                # return render_template('login_successful.html', user_info=user_info)
+                user_id = int(result)
+                return redirect(url_for('movie_list_view', user_id=user_id))
             else:
                 flash('User login not successful! Username or Password is invalid.', 'failed.') 
                 return render_template('login_view.html', sign_up=sign_up)
         elif value == 'Signup & login':
-            # TODO: Insert user into database and log them in.
-            # return redirect(url_for('movie_review_details_view', movie_id="69", user_id=user_info['user_id']))
-            user_info = {
-                    "user_id" : "1234",
-                    "user_role": "general_user"
-            }
-
             username = request.form["username"]
-
+            result = str(signup(username, user_email=email, user_password=password))
             sign_up = True
 
-            user_name_does_not_exists = True
-
-            if user_name_does_not_exists:
-                return redirect(url_for('movie_list_view', user_id=user_info['user_id']))
+            if result.isnumeric():
+                user_id = int(result)
+                return redirect(url_for('movie_list_view', user_id=user_id))
             else:
                 flash('User login not successful! Username or Password is invalid.', 'failed.') 
                 return render_template('login_view.html', sign_up=sign_up)

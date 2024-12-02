@@ -1,28 +1,35 @@
-from flask import Flask, render_template, url_for, request, redirect
+from flask import Flask, render_template, url_for, request, redirect, current_app
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CheckConstraint
 from datetime import datetime
-from .flashenv import *
+# from .flashenv import *
 from database import *
 import re
+import os
+
+from app_singleton import get_app_config
 
 
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
-db = SQLAlchemy(app)
+# app = Flask(__name__)
+# app = get_app_config()
+# app = current_app()
+# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
+# db = SQLAlchemy(app)
 
-with app.app_context():
-    db.drop_all()
-    db.create_all()
+reset_database_flag = int(os.getenv('RESET_DATABASE', 1))
 
-admin_user = User(
-    name=ADMIN_NAME,
-    email=ADMIN_EMAIL,
-    password=ADMIN_PASSWORD,
-    role='admin',
-)
-db.session.add(admin_user)
-db.session.commit()
+if reset_database_flag:
+    with app.app_context():
+        db.drop_all()
+        db.create_all()
+        admin_user = User(
+            name=os.getenv('ADMIN_NAME'),
+            email=os.getenv('ADMIN_EMAIL'),
+            password=os.getenv('ADMIN_PASSWORD'),
+            role='admin'
+        )
+        db.session.add(admin_user)
+        db.session.commit()
 
 
 def fetch_user(email):
@@ -123,73 +130,77 @@ def fetch_movies(movie_name):
 
 
 def reviews(movie_id,review_content,rating,user_id):
-    if request.method == "POST":
-       
-        new_review = Review(
-            content=review_content, 
-            rating=rating, 
-            movie_id=movie_id, 
-            user_id=user_id,  
-        )
-        try:
-            db.session.add(new_review)
-            db.session.commit()
-            movie = Movie.query.get(movie_id)
-            reviews = Review.query.filter_by(movie_id=movie_id).all()
-            average_rating = (sum([review.rating for review in reviews]) / len(reviews))
-            movie.rating = round(average_rating, 1) 
-            db.session.commit()
+    new_review = Review(
+        content=review_content, 
+        rating=rating, 
+        movie_id=movie_id, 
+        user_id=user_id,  
+    )
+    try:
+        db.session.add(new_review)
+        db.session.commit()
+        movie = Movie.query.get(movie_id)
+        reviews = Review.query.filter_by(movie_id=movie_id).all()
+        average_rating = (sum([review.rating for review in reviews]) / len(reviews))
+        movie.rating = round(average_rating, 1) 
+        db.session.commit()
 
-            return redirect('/reviews')  
-        except Exception as e:
-            return f"There was an issue adding the review: {str(e)}"
+        return new_review.id  
+    except Exception as e:
+        return f"There was an issue adding the review: {str(e)}"
 
     
 def update_review(movie_id,user_id,updated_review,updated_rating):
-    if request.method == "POST":
-        movie_id = movie_id
-        user_id = user_id
+    movie_id = movie_id
+    user_id = user_id
+    
+    review = Review.query.filter_by(movie_id=movie_id, user_id=user_id).first()
+    if not review:
+        return "Error"
+
+    
+    review.content = updated_review
+    review.rating = updated_rating
         
-        review = Review.query.filter_by(movie_id=movie_id, user_id=user_id).first()
-        if not review:
-            return "Error"
+    db.session.commit()
 
         
-        review.content = updated_review
-        review.rating = updated_rating
-            
-        db.session.commit()
+    movie = Movie.query.get(movie_id)
+    if movie:
+            reviews = Review.query.filter_by(movie_id=movie_id).all()
+            average_rating = sum([r.rating for r in reviews]) / len(reviews)
+            movie.rating = round(average_rating, 1)
+            db.session.commit()
+    else:
+        return "Movie not found Error"
 
-            
-        movie = Movie.query.get(movie_id)
-        if movie:
-                reviews = Review.query.filter_by(movie_id=movie_id).all()
-                average_rating = sum([r.rating for r in reviews]) / len(reviews)
-                movie.rating = round(average_rating, 1)
-                db.session.commit()
+    return review.id
+
             
         
 def delete_review(movie_id,user_id):
-    if request.method == "POST":
-       
-        movie_id = movie_id
-        user_id = user_id
+    movie_id = movie_id
+    user_id = user_id
+    
+
+    review = Review.query.filter_by(movie_id=movie_id, user_id=user_id).first()
+    if not review:
+        return "Error!"
+
+    
+    db.session.delete(review)
+    db.session.commit()
+
         
-
-        review = Review.query.filter_by(movie_id=movie_id, user_id=user_id).first()
-        if not review:
-            return "Error!"
-
-        
-        db.session.delete(review)
-        db.session.commit()
-
-            
-        movie = Movie.query.get(movie_id)
-        if movie:
-            reviews = Review.query.filter_by(movie_id=movie_id).all()
-            if reviews:
-                    average_rating = sum([r.rating for r in reviews]) / len(reviews)
-                    movie.rating = round(average_rating, 1)
-            else:
-                    movie.rating=None
+    movie = Movie.query.get(movie_id)
+    if movie:
+        reviews = Review.query.filter_by(movie_id=movie_id).all()
+        if reviews:
+                average_rating = sum([r.rating for r in reviews]) / len(reviews)
+                movie.rating = round(average_rating, 1)
+        else:
+                movie.rating = 0
+    else:
+        return "Movie error not found!"
+    
+    return 1

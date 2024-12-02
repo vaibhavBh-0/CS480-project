@@ -2,8 +2,15 @@ from flask import Flask, render_template, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import CheckConstraint
 from datetime import datetime
+from dotenv import load_dotenv
 
-app = Flask(__name__)
+from app_singleton import get_app_config
+
+if not load_dotenv('.flashenv'):
+    print("Environment var not found")
+
+# app = Flask(__name__)
+app = get_app_config()
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
 db = SQLAlchemy(app)
 
@@ -14,9 +21,9 @@ class User(db.Model):
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(50), nullable=False)
-    __table_args__ = (
-        db.CheckConstraint("LENGTH(password) >= 8", name='check_password_length'),
-    )
+    # __table_args__ = (
+    #     db.CheckConstraint("LENGTH(password) >= 8", name='check_password_length'),
+    # )
     role = db.Column(db.String(50), nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.now())
 
