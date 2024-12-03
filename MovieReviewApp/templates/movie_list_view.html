@@ -23,11 +23,19 @@ Movie List
 {% endif %}
 </h1>
 <!-- Search Form -->
+{% if user_id %}
+<form method="POST" action="{{ url_for('movie_list_view', user_id=user_id) }}" class="mb-4 d-flex">
+    <input class="form-control me-2" type="text" name="search" placeholder="Search Movies"
+           value="{{ request.form.get('search', '') }}">
+    <button class="btn btn-outline-success" type="submit">Search</button>
+</form>
+{% else %}
 <form method="POST" action="{{ url_for('movie_list_view') }}" class="mb-4 d-flex">
     <input class="form-control me-2" type="text" name="search" placeholder="Search Movies"
            value="{{ request.form.get('search', '') }}">
     <button class="btn btn-outline-success" type="submit">Search</button>
 </form>
+{% endif %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4>Total movies: <span class="text-dark">{{ total_rows }}</span></h4>
     <h4>Showing movies <span class="text-dark">{{ range_start+1 }}</span> to <span class="text-dark">{{ range_end }}</span>

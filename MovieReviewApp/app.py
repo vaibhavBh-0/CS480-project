@@ -19,6 +19,7 @@ def login_view():
         value = request.form["submission"]
         if value == 'Login':
             # User ID is int.
+            result = str(login(email, password))
             verified = result.isnumeric()
             
             if verified:
@@ -59,7 +60,11 @@ def movie_list_view(user_id=None):
         search_term = request.form.get('search')
         if search_term:
             # Redirect to the GET request with search term and page 1 (for new search)
-            return redirect(url_for('movie_list_view', search=search_term, page=1))
+            # return redirect(url_for('movie_list_view', search=search_term, page=1))
+            if user_id is not None:
+                return redirect(url_for('movie_list_view',user_id=user_id, search=search_term, page=1))
+            else:
+                return redirect(url_for('movie_list_view', search=search_term, page=1))
 
     # Get current page and search term from query parameters
     page = request.args.get('page', 1, type=int)
