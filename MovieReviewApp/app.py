@@ -1,5 +1,4 @@
-import time
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash
 
 from flask_caching import Cache
 from utils import get_string_date_from_time, format_currency
@@ -70,7 +69,6 @@ def movie_list_view(user_id=None):
     page = request.args.get('page', 1, type=int)
     search_term = request.args.get('search')
     per_page = 100
-    time_start = time.time()
 
     if search_term:
         movie_data = fetch_movies(search_term)
