@@ -1,31 +1,11 @@
-import os
 import time
 from flask import Flask, render_template, request, redirect, url_for, flash
 
-from dotenv import load_dotenv
 from flask_caching import Cache
-from app_singleton import get_app_config
 from utils import get_string_date_from_time, format_currency
 from sqlalchemy import text
 from database_utils import *
-import numpy as np
 from datetime import datetime
-
-if not load_dotenv('.flashenv'):
-    print("Environment var not found")
-
-# app = Flask(__name__)
-# # Set environment variables and secrets.
-# app.secret_key = os.getenv("FLASK_SECRET_KEY")
-# app.config["CACHE_TYPE"] = os.getenv("CACHE_TYPE")
-# app.config["CACHE_REDIS_HOST"] = os.getenv("CACHE_REDIS_HOST")
-# val = os.getenv("CACHE_REDIS_PORT")
-# print(f'val: {val} and type: {type(val)}')
-# app.config["CACHE_REDIS_PORT"] = int(os.getenv("CACHE_REDIS_PORT"))
-# app.config["CACHE_DEFAULT_TIMEOUT"] = int(os.getenv("CACHE_DEFAULT_TIMEOUT"))
-# app.config["CACHE_REDIS_DB"] = int(os.getenv("CACHE_REDIS_DB"))
-
-# app = get_app_config()
 
 cache = Cache(app)
 
@@ -38,8 +18,6 @@ def login_view():
         password = request.form["password"]
         value = request.form["submission"]
         if value == 'Login':
-
-            result = str(login(email, password))
             # User ID is int.
             verified = result.isnumeric()
             
@@ -120,12 +98,10 @@ def movie_list_view(user_id=None):
                     'avg_rating': tup[5]})
             cache.set("movies", movies)
     admin=0
-    if user_id:
-       if int(user_id)==1:
-         print("success")
-         admin=1
-       else:
-         admin=0
+    if user_id is not None:
+        admin = int(user_id == '1')
+    else:
+        admin = 0
     total_rows = len(movies)
     range_start = (page - 1) * per_page
     range_end = min(page * per_page, total_rows)
@@ -157,26 +133,34 @@ def movie_review_details_view(movie_id, user_id=None):
     movie_details_list = db.session.execute(query_text).fetchall()[0]
     query_text = text(f'SELECT * FROM reviews where movie_id={movie_id}')
 
-    movie_comments_details = db.session.execute(query_text).fetchall()   
+    movie_reviews = db.session.execute(query_text).fetchall()   
     update_post_flag = False
     delete_flag = False
     if request.method == "POST":
 
        if request.form['comment_submission']=='DELETE':
-           delete_review(movie_id,user_id)
+           result = delete_review(movie_id,user_id)
+           print(f'Deleing review {result}')
            delete_flag = True
        else:
-           if len(movie_comments_details)!=0:
-               user_id_list = [tup[-2] for tup in movie_comments_details]
+           if len(movie_reviews)!=0:
+               user_id_list = [tup[-2] for tup in movie_reviews]
                update_post_flag = int(user_id) in user_id_list
-               for tup in movie_comments_details:
+               for tup in movie_reviews:
                   if tup[-2]==int(user_id):
                     review_id = tup[0]
            if update_post_flag:
-
-               review_id = update_review(movie_id,user_id,review_id,request.form['comment'],int(request.form['rating']))
+               result = update_review(movie_id,user_id,review_id,request.form['comment'],int(request.form['rating']))
+               print(f'Result : {review_id}')
            else:
-               review_id = reviews(movie_id,request.form['comment'],int(request.form['rating']),user_id)
+               result = reviews(movie_id,request.form['comment'],int(request.form['rating']),user_id)
+               
+               # Successful insertion
+               if str(result).isnumeric():
+                   review_id = int(result)
+               else:
+                   print('error in updating Review')
+
            # check if comment is to be updated or deleted.
 
        # if request.form['comment_submission'] == 'delete':
@@ -188,57 +172,44 @@ def movie_review_details_view(movie_id, user_id=None):
     # movie_details_list = db.session.execute(query_text).fetchall()[0]
     query_text = text(f'SELECT * FROM reviews where movie_id={movie_id}')
 
-    movie_comments_details = db.session.execute(query_text).fetchall() 
+    movie_reviews = db.session.execute(query_text).fetchall()
+    average_rating = sum(item[2] for item in movie_reviews) / len(movie_reviews) if len(movie_reviews) else 0
     if update_post_flag or delete_flag:
-        if len(movie_comments_details)!=0:
-            update_movie(movie_id, np.mean([tup[2] for tup in movie_comments_details]))
-        else:
-            update_movie(movie_id, 0)
+        update_movie(movie_id, average_rating)
+        # average_rating = 0
+        # if len(movie_reviews)!=0:
+        #     average_rating = sum(item[2] for item in movie_reviews) / len(movie_reviews)
+        #     update_movie(movie_id, average_rating)
+        # else:
+        #     update_movie(movie_id, average_rating)
     genres = fetch_genre(movie_id)
 
+    movie_details = {
+        'movie_id': movie_details_list[0],
+        'movie_name': movie_details_list[1],
+        'movie_budget': format_currency(movie_details_list[2]),
+        'movie_revenue': format_currency(movie_details_list[3]),
+        'genre': genres[0][0],
+        'avg_rating': average_rating
+    }
 
-    # movie_details_key = f'movie_details_{movie_id}'
-    # movie_reviews_key = f'movie_reviews_key{movie_id}'
-    # movie_details = cache.get(movie_details_key)
-    # movie_comments = cache.get(movie_reviews_key)
-
-    debug = True
-
-    # if movie_details is None:
-    #     # Call the query and set it in cache.
-    #     pass
-
-    # if movie_comments is None:
-    #     # Call the query and set it in cache.
-    #     pass
-    # print(movie_comments_details,"odbqjehfbehflwjehfkwqj ebflkwqhnekfjgqhekjfbkqjelwehfnkqjeghklbl")
-    if debug:
-        movie_details = {
-            'movie_id': movie_details_list[0],
-            'movie_name': movie_details_list[1],
-            'movie_budget': format_currency(movie_details_list[2]),
-            'movie_revenue': format_currency(movie_details_list[3]),
-            'genre': genres[0][0],
-            'avg_rating': movie_details_list[5]
-        }
-
-        now = time.time()
-        in_minutes = lambda x: x * 60
-        movie_comments = []
-        for tup in movie_comments_details:
-            movie_comments.append({'timestamp': int(round(datetime.strptime(tup[-1], "%Y-%m-%d %H:%M:%S.%f").timestamp())),
-                    'user_id': tup[-2],
-                    'review_id' : tup[0],
-                    'movie_id' : tup[-3],
-                    'comment': tup[1],
-                    'rating': tup[2]})
+    movie_comments = []
+    for tup in movie_reviews:
+        username = fetch_user_name(tup[-2])
+        movie_comments.append({'timestamp': int(round(datetime.strptime(tup[-1], "%Y-%m-%d %H:%M:%S.%f").timestamp())),
+                'user_id': tup[-2],
+                'user_name': username,
+                'review_id' : tup[0],
+                'movie_id' : tup[-3],
+                'comment': tup[1],
+                'rating': tup[2]})
     user_comment = None
 
     if user_id is not None:
         filtered_comments = []
 
         for comment in movie_comments:
-            if comment['user_id'] == user_id:
+            if comment['user_id'] == int(user_id):
                 user_comment = comment
             else:
                 filtered_comments.append(comment)
@@ -308,6 +279,8 @@ def add_movie_details_view(user_id):
         _ = add_movie(movie_name, movie_budget=movie_budget, 
                       movie_revenue=movie_revenue, movie_casts=movie_casts,
                       movie_genre=movie_genre, movie_rating=movie_rating)
+        
+        print(_)
         
         return redirect(url_for('movie_list_view', user_id=user_id))
 

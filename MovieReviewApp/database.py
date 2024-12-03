@@ -21,9 +21,6 @@ class User(db.Model):
     name = db.Column(db.String(50), nullable=False)
     email = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(50), nullable=False)
-    # __table_args__ = (
-    #     db.CheckConstraint("LENGTH(password) >= 8", name='check_password_length'),
-    # )
     role = db.Column(db.String(50), nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.now())
 

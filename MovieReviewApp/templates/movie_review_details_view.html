@@ -89,14 +89,14 @@
 
                     </form>
                 </div>
+                {%if user_comment%}
                 <div class = "movie-user-comment-container">
                     <form method="POST" action="{{ url_for('movie_review_details_view', movie_id=movie_details.movie_id, user_id=user_id) }}">
                         <input type="hidden" name="comment_submission" value="DELETE">
                         <button type="submit">Delete my review</button>
                     </form>
-
-                    </form>
                 </div>
+                {%endif%}
             </section>
             {%endif%}
             <section id="movie-reviews-id">
@@ -105,7 +105,7 @@
                     {% for movie_comment in movie_comments %}
                     <ul>
                         <li>
-                            <p> Posted By: {{movie_comment.user_id}}</p>
+                            <p> Posted By: {{movie_comment.user_name}}</p>
                             <p> Posted On: {{movie_comment.timestamp}}</p>
                             <p> Rating: {{movie_comment.rating}}</p>
                             <p> Review: {{movie_comment.comment}}</p>

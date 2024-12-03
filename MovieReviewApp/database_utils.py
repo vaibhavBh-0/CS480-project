@@ -1,20 +1,11 @@
-from flask import Flask, render_template, url_for, request, redirect, current_app
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import CheckConstraint, text
-from datetime import datetime
+# from flask import Flask
+# from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
+# from datetime import datetime
 # from .flashenv import *
 from database import *
 import re
 import os
-
-from app_singleton import get_app_config
-
-
-# app = Flask(__name__)
-# app = get_app_config()
-# app = current_app()
-# app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
-# db = SQLAlchemy(app)
 
 reset_database_flag = int(os.getenv('RESET_DATABASE', 1))
 
@@ -33,8 +24,11 @@ if reset_database_flag:
 
 
 def fetch_user(email):
-
     return User.query.filter_by(email=email).first()
+
+
+def fetch_user_name(user_id):
+    return User.query.filter_by(id=user_id).first().name
 
 
 def is_valid_email_format(email):
@@ -173,25 +167,25 @@ def update_review(movie_id,user_id, review_id, updated_review,updated_rating):
     db.session.execute(query_text)
     db.session.commit()
 
-    # review = Review.query.filter_by(id=review_id).first()
-    # if not review:
-    #     return "Error"
+    review = Review.query.filter_by(id=review_id).first()
+    if not review:
+        return "Error"
 
     
-    # review.content = updated_review
-    # review.rating = updated_rating
+    review.content = updated_review
+    review.rating = updated_rating
         
-    # db.session.commit()
+    db.session.commit()
 
         
-    # movie = Movie.query.get(movie_id)
-    # if movie:
-    #         reviews = Review.query.filter_by(movie_id=movie_id).all()
-    #         average_rating = sum([r.rating for r in reviews]) / len(reviews)
-    #         movie.rating = round(average_rating, 1)
-    #         db.session.commit()
-    # else:
-    #     return "Movie not found Error"
+    movie = Movie.query.get(movie_id)
+    if movie:
+            reviews = Review.query.filter_by(movie_id=movie_id).all()
+            average_rating = sum([r.rating for r in reviews]) / len(reviews)
+            movie.rating = round(average_rating, 1)
+            db.session.commit()
+    else:
+        return "Movie not found Error"
 
     return review_id
 
