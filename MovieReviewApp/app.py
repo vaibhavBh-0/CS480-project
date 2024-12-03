@@ -119,7 +119,13 @@ def movie_list_view(user_id=None):
                     'genre': tup[4],
                     'avg_rating': tup[5]})
             cache.set("movies", movies)
-    admin = 1
+    admin=0
+    if user_id:
+       if int(user_id)==1:
+         print("success")
+         admin=1
+       else:
+         admin=0
     total_rows = len(movies)
     range_start = (page - 1) * per_page
     range_end = min(page * per_page, total_rows)
